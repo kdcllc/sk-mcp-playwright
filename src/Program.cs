@@ -1,5 +1,4 @@
-﻿
-using DotNetEnv.Configuration;
+﻿using DotNetEnv.Configuration;
 
 using Microsoft.SemanticKernel;
 
@@ -10,7 +9,6 @@ hostBuilder.Configuration.AddUserSecrets<Program>();
 hostBuilder.Configuration.AddDotNetEnv();
 hostBuilder.Configuration.AddEnvironmentVariables();
 
-
 hostBuilder.Services.AddLogging(loggingBuilder =>
 {
     loggingBuilder.ClearProviders();
@@ -19,36 +17,64 @@ hostBuilder.Services.AddLogging(loggingBuilder =>
     loggingBuilder.AddDebug();
 });
 
-
 hostBuilder.Services.AddSingleton(sp =>
 {
     var kernelBuilder = Kernel.CreateBuilder();
-
     var config = sp.GetRequiredService<IConfiguration>();
 
-    var openAiApiKey = config["OpenAI:ApiKey"];
-    if (!string.IsNullOrEmpty(openAiApiKey))
-    {
-        kernelBuilder.Services.AddOpenAIChatCompletion(
-            serviceId: "openai",
-            modelId: config["OpenAI:ChatModelId"] ?? "gpt-4o",
-            apiKey: openAiApiKey);
-    }
-    else
-    {
-        var azureOpenAIEndpoint = config["AzureOpenAI:Endpoint"];
-        var azureOpenAIApiKey = config["AzureOpenAI:ApiKey"];
+    var llmProvider = config["LLM:Provider"] ?? "AzureOpenAI";
 
-        if (string.IsNullOrEmpty(azureOpenAIEndpoint) || string.IsNullOrEmpty(azureOpenAIApiKey))
-        {
-            throw new InvalidOperationException("AzureOpenAI:Endpoint and AzureOpenAI:ApiKey must be set in configuration");
-        }
+    switch (llmProvider.ToUpperInvariant())
+    {
+        case "OPENAI":
+            var openAiApiKey = config["OpenAI:ApiKey"];
+            if (string.IsNullOrEmpty(openAiApiKey))
+            {
+                throw new InvalidOperationException("OpenAI:ApiKey must be set in configuration when LLM:Provider is OpenAI");
+            }
 
-        kernelBuilder.AddAzureOpenAIChatCompletion(
-            deploymentName: config["AzureOpenAI:DeploymentName"] ?? "gpt-4o",
-            endpoint: azureOpenAIEndpoint,
-            apiKey: azureOpenAIApiKey);
+            kernelBuilder.Services.AddOpenAIChatCompletion(
+                serviceId: "openai",
+                modelId: config["OpenAI:ChatModelId"] ?? "gpt-4o",
+                apiKey: openAiApiKey);
+            break;
+
+        case "AZUREOPENAI":
+            var azureOpenAIEndpoint = config["AzureOpenAI:Endpoint"];
+            var azureOpenAIApiKey = config["AzureOpenAI:ApiKey"];
+
+            if (string.IsNullOrEmpty(azureOpenAIEndpoint) || string.IsNullOrEmpty(azureOpenAIApiKey))
+            {
+                throw new InvalidOperationException("AzureOpenAI:Endpoint and AzureOpenAI:ApiKey must be set in configuration when LLM:Provider is AzureOpenAI");
+            }
+
+            kernelBuilder.AddAzureOpenAIChatCompletion(
+                deploymentName: config["AzureOpenAI:DeploymentName"] ?? "gpt-4o",
+                endpoint: azureOpenAIEndpoint,
+                apiKey: azureOpenAIApiKey);
+            break;
+
+        case "OLLAMA":
+            var ollamaEndpoint = config["Ollama:Endpoint"] ?? "http://localhost:11434";
+            var ollamaModelName = config["Ollama:ModelName"] ?? "mistral";
+
+            kernelBuilder.AddOpenAIChatCompletion(
+                        modelId: ollamaModelName,
+                        endpoint: new Uri(ollamaEndpoint),
+                        apiKey: "apikey");
+
+            // can be used with this package <PackageReference Include="Microsoft.SemanticKernel.Connectors.Ollama" Version="1.47.0-alpha" />
+            //#pragma warning disable SKEXP0070 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+            //            kernelBuilder.AddOllamaChatCompletion(
+            //                modelId: ollamaModelName,
+            //                endpoint: new Uri(ollamaEndpoint));
+            //#pragma warning restore SKEXP0070 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+            break;
+
+        default:
+            throw new InvalidOperationException($"Unsupported LLM provider: {llmProvider}. Supported values are: OpenAI, AzureOpenAI, Ollama");
     }
+
     return kernelBuilder.Build();
 });
 

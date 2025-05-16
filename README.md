@@ -13,9 +13,6 @@ Please send [email](mailto:kingdavidconsulting@gmail.com) if you consider hiring
 
 If you like or are using this project to learn or start your solution, please give it a star. Thanks!
 
-[semantic-kernel-playwright-mcp](https://github.com/akshaykokane/semantic-kernel-playwright-mcp)
-[Model Context Protocol Sample](https://github.com/microsoft/semantic-kernel/blob/7a19ae350eaff5746ace52d2c894a9975d82ba59/dotnet/samples/Demos/ModelContextProtocol/README.md)
-
 **Model Context Protocol (MCP)** is an emerging standard designed to bridge the gap between AI models and real-world data, tools, and services. Developed by Anthropic in late 2024, MCP aims to solve the problem of connecting large language models (LLMs) and AI agents to diverse and dynamic data sources securely and seamlessly.
 
 **Key Points:**
@@ -27,3 +24,69 @@ If you like or are using this project to learn or start your solution, please gi
 6. **Future**: MCP is expected to become a foundational communications layer for AI systems, similar to what HTTP did for the web, enabling deeply integrated, context-aware, and action-capable AI systems.
 
 MCP represents a significant step towards standardizing AI integration, making it easier for developers to connect AI models to various data sources and tools, ultimately unlocking the full potential of AI in various domains.
+
+## Configuration
+
+This application supports multiple LLM providers that can be configured via environment variables. To get started:
+
+1. Copy the `.env.sample` file to `.env` in the src directory
+2. Configure your preferred LLM provider
+
+### Supported LLM Providers
+
+#### OpenAI
+
+To use OpenAI as your LLM provider:
+
+```bash
+# Set OpenAI as your provider
+LLM__PROVIDER="OpenAI"
+
+# Configure OpenAI credentials
+OPENAI__APIKEY="your-openai-api-key"
+OPENAI__CHATMODELID="gpt-4o"  # or any other model like gpt-4-turbo, gpt-3.5-turbo
+```
+
+#### Azure OpenAI
+
+To use Azure OpenAI as your LLM provider:
+
+```bash
+# Set Azure OpenAI as your provider
+LLM__PROVIDER="AzureOpenAI"
+
+# Configure Azure OpenAI credentials
+AZUREOPENAI__DEPLOYMENTNAME="gpt-4o"  # Your deployment name in Azure
+AZUREOPENAI__ENDPOINT="https://your-resource-name.openai.azure.com"
+AZUREOPENAI__APIKEY="your-azure-openai-api-key"
+```
+
+#### Ollama (Local Models)
+
+To use Ollama for running local models:
+
+```bash
+# Set Ollama as your provider
+LLM__PROVIDER="Ollama"
+
+# Configure Ollama
+OLLAMA__MODELNAME="mistral"  # or llama3, phi3, etc.
+OLLAMA__ENDPOINT="http://localhost:11434"  # Default Ollama endpoint
+```
+
+Ensure Ollama is installed and running on your machine before using this option. You can download Ollama from [https://ollama.com/](https://ollama.com/).
+
+## Running the Application
+
+To run the application:
+
+```bash
+cd src
+dotnet run
+```
+
+The application will use the LLM provider specified in your environment configuration.
+
+## Inspired by
+- [semantic-kernel-playwright-mcp](https://github.com/akshaykokane/semantic-kernel-playwright-mcp)
+- [Model Context Protocol Sample](https://github.com/microsoft/semantic-kernel/blob/7a19ae350eaff5746ace52d2c894a9975d82ba59/dotnet/samples/Demos/ModelContextProtocol/README.md)

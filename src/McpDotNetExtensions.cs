@@ -3,6 +3,7 @@
 using McpDotNet.Client;
 using McpDotNet.Configuration;
 using McpDotNet.Protocol.Types;
+
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.SemanticKernel;
 
@@ -13,7 +14,7 @@ namespace ModelContextProtocol;
 /// </summary>
 internal static class McpDotNetExtensions
 {
-    public static async Task<IMcpClient> GetMCPClientForPlaywright()
+    public static async Task<IMcpClient> GetMCPClientForPlaywright(CancellationToken cancellation)
     {
         McpClientOptions options = new()
         {
@@ -32,17 +33,17 @@ internal static class McpDotNetExtensions
             }
         };
 
-        var factory = new  McpClientFactory(
+        var factory = new McpClientFactory(
                 [config],
                  options,
-                NullLoggerFactory.Instance                 
+                NullLoggerFactory.Instance
             );
 
-        var mcpClient = await factory.GetClientAsync(config.Id).ConfigureAwait(false);
+        var mcpClient = await factory.GetClientAsync(config.Id, cancellation).ConfigureAwait(false);
         if (mcpClient == null)
         {
             throw new InvalidOperationException("Failed to create MCP client for Playwright.");
-        }    
+        }
         return mcpClient;
     }
 
@@ -80,9 +81,9 @@ internal static class McpDotNetExtensions
     /// <summary>
     /// Map the tools exposed on this <see cref="IMcpClient"/> to a collection of <see cref="KernelFunction"/> instances for use with the Semantic Kernel.
     /// </summary>
-    internal static async Task<IEnumerable<KernelFunction>> MapToFunctionsAsync(this IMcpClient mcpClient)
+    internal static async Task<IEnumerable<KernelFunction>> MapToFunctionsAsync(this IMcpClient mcpClient, CancellationToken cancellationToken)
     {
-        var tools = await mcpClient.ListToolsAsync().ConfigureAwait(false);
+        var tools = await mcpClient.ListToolsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
         return tools.Tools.Select(t => t.ToKernelFunction(mcpClient)).ToList();
     }
 
